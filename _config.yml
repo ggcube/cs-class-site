@@ -1,0 +1,8 @@
+title: 資訊科技教學網站
+theme: just-the-docs
+
+nav:
+  - Home: index.md
+  - Flask 教學:
+      - 課程總覽: flask/index.md
+      - 簡易伺服器: flask/simple-server.md
