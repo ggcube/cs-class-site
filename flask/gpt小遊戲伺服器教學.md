@@ -87,6 +87,15 @@ app.run(host="0.0.0.0", port=5000)
       if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
     });
 
+    function resetGame() {
+      snake = [{ x: 200, y: 200 }];
+      direction = "RIGHT";
+      food = {
+        x: Math.floor(Math.random() * 20) * box,
+        y: Math.floor(Math.random() * 20) * box
+      };
+    }
+
     function draw() {
       ctx.clearRect(0, 0, 400, 400);
       for (let i = 0; i < snake.length; i++) {
@@ -108,7 +117,7 @@ app.run(host="0.0.0.0", port=5000)
         snake.some(seg => seg.x === headX && seg.y === headY)
       ) {
         alert("Game Over! 分數：" + (snake.length - 1));
-        document.location.reload();
+        resetGame();
         return;
       }
 
