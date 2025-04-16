@@ -1,36 +1,25 @@
-# 🧠 GPT 小遊戲伺服器教學
+# 🐍 貪食蛇遊戲伺服器教學
 
 ## 🎯 課程目標
-- 學會使用 Flask 架設區網內部的遊戲伺服器
-- 使用 GPT 協助生成 HTML + JS 小遊戲
-- 讓同學在電腦教室中，透過瀏覽器連線體驗互動式遊戲
+- 在本地區網環境中建立小遊戲伺服器
+- 使用 Flask 架設靜態 HTML 遊戲頁面
+- 學生透過瀏覽器連線即可遊玩「貪食蛇」
 
 ---
 
-## 🧰 準備工具
-- 安裝 Python 3
-- 安裝 Flask 套件：
-```bash
-pip install flask
+## 📁 專案資料夾結構
 ```
-- 使用 VSCode 或記事本
-
----
-
-## 📁 專案結構
-```
-gpt-game-server/
-├── app.py                ← Flask 主程式
+snake-game-server/
+├── app.py                    ← Flask 主程式
 ├── static/
-│   └── game.html         ← GPT 產生的小遊戲頁面
+│   └── snake.html            ← 遊戲主頁面（HTML + JS）
 └── templates/
-    └── index.html        ← 首頁（列出可玩遊戲）
+    └── index.html            ← 首頁（遊戲入口）
 ```
 
 ---
 
-## 🖥️ Flask 主程式：`app.py`
-
+## 🧱 Flask 主程式：`app.py`
 ```python
 from flask import Flask, send_from_directory, render_template
 
@@ -40,33 +29,101 @@ app = Flask(__name__)
 def home():
     return render_template("index.html")
 
-@app.route("/game")
-def game():
-    return send_from_directory("static", "game.html")
+@app.route("/snake")
+def snake():
+    return send_from_directory("static", "snake.html")
 
 app.run(host="0.0.0.0", port=5000)
 ```
 
 ---
 
-## 🌐 建立遊戲畫面：`static/game.html`
-
+## 🖥️ 首頁：`templates/index.html`
 ```html
 <!DOCTYPE html>
 <html>
 <head>
-  <title>單字配對遊戲</title>
+  <title>遊戲首頁</title>
 </head>
 <body>
-  <h2>請點選對應的中英文</h2>
-  <ul id="wordList"></ul>
+  <h1>🎮 小遊戲伺服器</h1>
+  <a href="/snake">點這裡玩貪食蛇</a>
+</body>
+</html>
+```
+
+---
+
+## 🐍 遊戲頁面：`static/snake.html`
+```html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>貪食蛇 Snake Game</title>
+  <style>
+    canvas { background: #000; display: block; margin: 20px auto; }
+    body { text-align: center; font-family: sans-serif; }
+  </style>
+</head>
+<body>
+  <h1>🐍 貪食蛇遊戲</h1>
+  <canvas id="game" width="400" height="400"></canvas>
   <script>
-    const words = [
-      { en: "apple", zh: "蘋果" },
-      { en: "cat", zh: "貓" },
-      { en: "book", zh: "書" }
-    ];
-    // 這裡可補上 GPT 生成的互動邏輯
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const box = 20;
+    let snake = [{ x: 200, y: 200 }];
+    let direction = "RIGHT";
+    let food = {
+      x: Math.floor(Math.random() * 20) * box,
+      y: Math.floor(Math.random() * 20) * box
+    };
+
+    document.addEventListener("keydown", e => {
+      if (e.key === "ArrowUp" && direction !== "DOWN") direction = "UP";
+      if (e.key === "ArrowDown" && direction !== "UP") direction = "DOWN";
+      if (e.key === "ArrowLeft" && direction !== "RIGHT") direction = "LEFT";
+      if (e.key === "ArrowRight" && direction !== "LEFT") direction = "RIGHT";
+    });
+
+    function draw() {
+      ctx.clearRect(0, 0, 400, 400);
+      for (let i = 0; i < snake.length; i++) {
+        ctx.fillStyle = i === 0 ? "lime" : "green";
+        ctx.fillRect(snake[i].x, snake[i].y, box, box);
+      }
+      ctx.fillStyle = "red";
+      ctx.fillRect(food.x, food.y, box, box);
+
+      let headX = snake[0].x;
+      let headY = snake[0].y;
+      if (direction === "LEFT") headX -= box;
+      if (direction === "RIGHT") headX += box;
+      if (direction === "UP") headY -= box;
+      if (direction === "DOWN") headY += box;
+
+      if (
+        headX < 0 || headY < 0 || headX >= 400 || headY >= 400 ||
+        snake.some(seg => seg.x === headX && seg.y === headY)
+      ) {
+        alert("Game Over! 分數：" + (snake.length - 1));
+        document.location.reload();
+        return;
+      }
+
+      let newHead = { x: headX, y: headY };
+      if (headX === food.x && headY === food.y) {
+        food = {
+          x: Math.floor(Math.random() * 20) * box,
+          y: Math.floor(Math.random() * 20) * box
+        };
+      } else {
+        snake.pop();
+      }
+      snake.unshift(newHead);
+    }
+    setInterval(draw, 100);
   </script>
 </body>
 </html>
@@ -74,60 +131,28 @@ app.run(host="0.0.0.0", port=5000)
 
 ---
 
-## 📃 建立首頁：`templates/index.html`
-
-```html
-<!DOCTYPE html>
-<html>
-<head>
-  <title>GPT 小遊戲首頁</title>
-</head>
-<body>
-  <h1>歡迎來玩 GPT 小遊戲</h1>
-  <a href="/game">進入單字配對遊戲</a>
-</body>
-</html>
+## 🔗 學生連線方式
+請學生在瀏覽器輸入：
 ```
+http://你的IP位址:5000/snake
+```
+（例如：http://192.168.0.10:5000/snake）
 
 ---
 
-## 🛠️ 啟動伺服器
-
-1. 打開命令提示字元或 VSCode Terminal
-2. 進入資料夾後輸入：
-```bash
-python app.py
-```
-3. 出現以下訊息表示成功：
-```
-Running on http://0.0.0.0:5000/
-```
-
----
-
-## 🤝 學生如何連線
-請學生打開瀏覽器，輸入你的 IP，例如：
-```
-http://192.168.0.10:5000/game
-```
-即可進入 GPT 遊戲！
-
----
-
-## 🔐 防火牆設定（Windows）
-記得開放 5000 port，步驟如下：
-1. 開啟「防火牆與進階安全性」
-2. 建立新的輸入規則
-3. 開啟 TCP 的 5000 port
-4. 設定為允許內部連線
+## 🔐 防火牆設定
+請務必開放 TCP port 5000，否則學生無法連線。
+可參考 Flask 防火牆設定教學課程。
 
 ---
 
 ## 💡 延伸挑戰
-- 將遊戲改成數學題、猜數字、圖形配對等
-- 每組同學製作不同 GPT 小遊戲在區網互訪
-- 加入倒數計時、分數累積、排行榜等功能
+- 增加分數顯示 / 最高分記錄
+- 增加加速功能、障礙物
+- 支援手機操作
+- 改寫成「多人連線」對戰版（需 Socket）
 
 ---
 
-祝大家玩得開心也學得開心！
+祝你成為區網遊戲伺服器大師！
+
